@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-center">Выберите вашу зависимость</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for dependency in dependencies %}
+            <div class="bg-dark-card p-6 rounded-lg shadow-md border border-gray-700 theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+                <h2 class="text-xl font-bold mb-3">{{ dependency.name }}</h2>
+                <p class="mb-4 text-gray-300">{{ dependency.description|truncatewords:30 }}</p>
+                <a href="{% url 'dependency_detail' dependency.slug %}" class="inline-block bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition">
+                    Подробнее
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Профиль пользователя</h1>
+
+    <div class="bg-dark-card p-6 rounded-lg shadow-md mb-6 theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+        <h2 class="text-xl font-semibold mb-4">Информация о пользователе</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><strong>Имя пользователя:</strong> {{ user.username }}</div>
+            <div><strong>Email:</strong> {{ user.email|default:"Не указан" }}</div>
+            <div><strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y" }}</div>
+            <div><strong>Уровень просветления:</strong> {{ user_profile.level }}</div>
+            <div><strong>Очки опыта:</strong> {{ user_profile.xp }}</div>
+        </div>
+        
+        <!-- Progress bar for next level -->
+        {% if progress_data %}
+        <div class="mt-6">
+            <div class="flex justify-between text-sm mb-1">
+                <span>Уровень {{ progress_data.current_level }}</span>
+                <span>{{ progress_data.current_xp }} / {{ progress_data.xp_for_next }} XP</span>
+                <span>Уровень {{ progress_data.next_level }}</span>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div class="bg-yellow-500 h-2.5 rounded-full" style="width: {{ progress_data.progress_percent }}%"></div>
+            </div>
+            <p class="text-center mt-2 text-sm">Прогресс до следующего уровня</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="bg-dark-card p-6 rounded-lg shadow-md theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+        <h2 class="text-xl font-semibold mb-4">Ваши зависимости</h2>
+
+        {% if user_dependencies %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="bg-gray-700">
+                            <th class="py-2 px-4 border-b text-left">Зависимость</th>
+                            <th class="py-2 px-4 border-b text-left">Уровень</th>
+                            <th class="py-2 px-4 border-b text-left">Статус</th>
+                            <th class="py-2 px-4 border-b text-left">Текущая серия</th>
+                            <th class="py-2 px-4 border-b text-left">Отметка дня</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_dep in user_dependencies %}
+                        <tr>
+                            <td class="py-2 px-4 border-b">{{ user_dep.dependency.name }}</td>
+                            <td class="py-2 px-4 border-b">{{ user_dep.level.get_level_display|default:"Не определен" }}</td>
+                            <td class="py-2 px-4 border-b">
+                                {% if user_dep.is_active %}
+                                    <span class="text-green-400">Активна</span>
+                                {% else %}
+                                    <span class="text-gray-400">Неактивна</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-2 px-4 border-b">{{ user_dep.current_streak }} дней</td>
+                            <td class="py-2 px-4 border-b">
+                                {% if user_dep.is_active and user_dep.level %}
+                                    <!-- Проверяем, есть ли вообще запись на сегодня -->
+                                    {% load custom_filters %}
+                                    {% has_any_record_for_today user_dep as today_has_record %}
+                                    {% if today_has_record %}
+                                        <!-- Есть запись за сегодня -->
+                                        {% has_relapse_for_today user_dep as today_relapse %}
+                                        {% if today_relapse %}
+                                            <span class="text-red-500">Сорвался</span>
+                                        {% else %}
+                                            <span class="text-green-500">Отмечено ✓</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <!-- Нет записи за сегодня -->
+                                        <form method="post" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="dependency_id" value="{{ user_dep.id }}">
+                                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm mr-2">
+                                                Отметить день
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <!-- Кнопка "Сорвался" -->
+                                    {% has_relapse_for_today user_dep as today_relapse %}
+                                    {% if not today_relapse %}
+                                        <form method="post" action="{% url 'relapse_button' user_dep.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm">
+                                                Сорвался
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>У вас пока нет зарегистрированных зависимостей.</p>
+            <a href="#" class="mt-4 inline-block bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition">
+                Выбрать зависимости
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

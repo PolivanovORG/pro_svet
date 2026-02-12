@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Определение уровня зависимости: {{ dependency.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'dependency_detail' dependency.slug %}" class="text-indigo-400 hover:text-indigo-300">&larr; Назад к зависимости</a>
+    </div>
+    
+    <div class="bg-dark-card p-8 rounded-lg shadow-md theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+        <h1 class="text-3xl font-bold mb-6 text-center">Определение уровня зависимости "{{ dependency.name }}"</h1>
+        
+        <div class="mb-8">
+            <p class="text-gray-300 mb-6">Для определения уровня зависимости "{{ dependency.name }}" выберите наиболее подходящий вариант:</p>
+            
+            <form method="post" action="{% url 'submit_assessment' dependency.slug %}">
+                {% csrf_token %}
+                
+                <div class="space-y-4">
+                    {% for level in levels %}
+                    <div class="border border-gray-600 rounded-lg p-4 hover:border-indigo-500 transition">
+                        <label class="cursor-pointer flex items-start">
+                            <input type="radio" name="level" value="{{ level.id }}" class="mt-1 mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <div class="font-medium">{{ level.get_level_display }} уровень</div>
+                                <div class="text-sm text-gray-400 mt-1">Требуется {{ level.days_required }} дней лечения</div>
+                                <div class="text-sm text-gray-500 mt-2">
+                                    {% if level.level == 'light' %}
+                                        Признаки: редкое проявление зависимости, минимальное влияние на повседневную жизнь.
+                                    {% elif level.level == 'medium' %}
+                                        Признаки: регулярное проявление зависимости, заметное влияние на работу, отношения и здоровье.
+                                    {% elif level.level == 'heavy' %}
+                                        Признаки: постоянное проявление зависимости, серьезное влияние на все аспекты жизни.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-400">Для этой зависимости не определены уровни.</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded transition">
+                        Определить уровень
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

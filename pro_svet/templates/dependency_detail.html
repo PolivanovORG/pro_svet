@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dependency.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'home' %}" class="text-indigo-400 hover:text-indigo-300">&larr; Назад к зависимостям</a>
+    </div>
+    
+    <div class="bg-dark-card p-8 rounded-lg shadow-md theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+        <h1 class="text-3xl font-bold mb-4">{{ dependency.name }}</h1>
+        
+        <div class="prose max-w-none theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
+            <p class="dependency-description">{{ dependency.description }}</p>
+
+            <!-- Detailed article content would go here -->
+            <h2 class="text-2xl font-semibold mt-6 mb-3">Подробнее о зависимости</h2>
+            <p>Эта зависимость характеризуется следующими признаками и симптомами. Люди, страдающие этой формой зависимости, часто сталкиваются с трудностями в повседневной жизни, отношениях и профессиональной деятельности.</p>
+            
+            <h3 class="text-xl font-medium mt-4 mb-2">Признаки зависимости</h3>
+            <ul class="list-disc pl-5 space-y-1">
+                <li>Частое и продолжительное использование/поведение</li>
+                <li>Неспособность контролировать поведение</li>
+                <li>Продолжение despite negative consequences</li>
+                <li>Толерантность (увеличение количества/времени)</li>
+                <li>Отказ от других занятий и интересов</li>
+            </ul>
+
+            <h3 class="text-xl font-medium mt-4 mb-2">Последствия</h3>
+            <p>Эта зависимость может привести к серьезным физическим, психологическим и социальным последствиям, включая проблемы со здоровьем, ухудшение отношений, снижение производительности на работе или учебе.</p>
+
+            <h3 class="text-xl font-medium mt-4 mb-2">Лечение</h3>
+            <p>Лечение этой зависимости требует комплексного подхода, включающего терапию, поддержку окружающих и изменение образа жизни. Важно понимать, что восстановление - это процесс, требующий времени и усилий.</p>
+        </div>
+        
+        {% if user.is_authenticated %}
+        <div class="mt-8 pt-6 border-t border-gray-700">
+            <h3 class="text-xl font-semibold mb-4">Действия</h3>
+            
+            {% if user_dependency %}
+                {% if user_dependency.is_active %}
+                    <p class="mb-4">Вы отслеживаете эту зависимость. Ваш текущий уровень: 
+                        {% if user_dependency.level %}
+                            {{ user_dependency.level.get_level_display }}
+                        {% else %}
+                            Не определен
+                        {% endif %}
+                    </p>
+                {% else %}
+                    <p class="mb-4">Вы отметили, что у вас нет этой зависимости.</p>
+                {% endif %}
+            {% endif %}
+            
+            <div class="flex flex-wrap gap-4">
+                {% if not user_dependency %}
+                    <a href="{% url 'assess_dependency_level' dependency.slug %}"
+                       class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition">
+                        Определить уровень зависимости
+                    </a>
+
+                    <a href="{% url 'mark_dependency_not_having' dependency.slug %}"
+                       class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded transition">
+                        У меня нет этой зависимости
+                    </a>
+                {% elif not user_dependency.level %}
+                    <a href="{% url 'assess_dependency_level' dependency.slug %}"
+                       class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition">
+                        Определить уровень зависимости
+                    </a>
+
+                    {% if user_dependency.is_active %}
+                        <a href="{% url 'mark_dependency_not_having' dependency.slug %}"
+                           class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded transition">
+                            У меня нет этой зависимости
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="mt-8 pt-6 border-t border-gray-700">
+            <p class="mb-4">Чтобы получить доступ к инструментам отслеживания и лечения, пожалуйста, <a href="{% url 'login' %}" class="text-indigo-400 hover:text-indigo-300">войдите</a> или <a href="{% url 'register' %}" class="text-indigo-400 hover:text-indigo-300">зарегистрируйтесь</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

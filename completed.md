@@ -1,0 +1,37 @@
+# Completed Tasks
+
+- Created models.py with all required models
+- Created admin.py with admin configurations
+- Fixed auto-field warnings by configuring BigAutoField
+- Created management command to populate database with initial data
+- Set up URLs for the application
+- Created authentication views (login, registration, profile)
+- Created templates for authentication and profile pages
+- Fixed logout button to use POST method with CSRF token
+- Fixed footer positioning to stick to bottom of page
+- Added authentication settings to settings.py
+- Implemented dynamic dark/light theme that transitions based on user's enlightenment level
+- Added context processor to make user profile available globally
+- Fixed color scheme to ensure readability at all enlightenment levels
+- Created main page to display all dependencies
+- Created dependency detail pages
+- Implemented functionality to mark dependencies as not having or to assess dependency level
+- Fixed experience awarding when marking dependency as not having
+- Updated registration and login forms to match the site's color scheme
+- Added dependency assessment functionality with level selection
+- Created dependency assessment page with level determination
+- Added functionality to mark daily abstinence and award XP
+- Added daily abstinence buttons to the profile page
+- Fixed daily abstinence logic to prevent multiple submissions per day
+- Created custom template filter to check daily records
+- Implemented basic XP and level system
+- Fixed template tags loading issue for custom filters
+- Corrected daily abstinence marking logic to properly award XP and update streaks
+- Implemented proper level system with XP thresholds
+- Added floating messages with close button in bottom-left corner
+- Fixed dependency detail page to show appropriate buttons based on user state
+- Prevented users from marking "I don't have this dependency" after starting treatment
+- Prevented users from changing dependency level once set
+- Removed all action buttons after user sets dependency level
+- Removed all action buttons after user marks "I don't have this dependency"
+- Implemented penalty system (100 XP deduction) when user wants to reassess dependency after marking "I don't have this dependency"

@@ -1,0 +1,29 @@
+# Django Framework
+Django
+django-cors-headers
+
+# Database
+# Using SQLite for development as mentioned in README (no additional packages needed)
+
+# Frontend Dependencies
+# Chart.js for visualization (to be included via CDN in templates)
+# Tailwind CSS (to be configured separately)
+
+# Authentication & Security
+django-allauth
+argon2-cffi
+
+# Date/Time Handling
+python-dateutil
+
+# Utilities
+Pillow # For image handling
+celery  # For scheduled tasks (notifications)
+redis  # For Celery backend
+
+# Email notifications
+django-celery-beat
+django-celery-email
+
+# Development tools
+django-debug-toolbar
