@@ -11,12 +11,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Create temp directory and copy files
+    - name: Create temp directory and compress files
       run: |
         mkdir -p temp_deploy
         rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' . ./temp_deploy/
-        
-    - name: Clean old project files on server
+        tar -czf temp_deploy.tar.gz -C temp_deploy .
+
+    - name: Upload compressed project files to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        password: ${{ secrets.BEGET_PASSWORD }}
+        port: 22
+        source: "temp_deploy.tar.gz"
+        target: "${{ secrets.BEGET_DEPLOY_PATH }}"
+        rm: true
+
+    - name: Extract and cleanup files on server
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.BEGET_HOST }}
@@ -24,21 +36,17 @@ jobs:
         password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         script: |
-          # Удаляем старые файлы проекта, но оставляем .git и другие системные файлы
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
-          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name '.env' ! -name 'venv' ! -name 'env' ! -name 'tmp' -exec rm -rf {} + 2>/dev/null || true
-
-    - name: Upload project files to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.BEGET_HOST }}
-        username: ${{ secrets.BEGET_USERNAME }}
-        password: ${{ secrets.BEGET_PASSWORD }}
-        port: 22
-        source: "./temp_deploy/*"
-        target: "${{ secrets.BEGET_DEPLOY_PATH }}"
-        strip_components: 1
-        rm: true
+          # Извлекаем архив в новую директорию
+          mkdir -p temp_extract
+          tar -xzf temp_deploy.tar.gz -C temp_extract
+          
+          # Копируем файлы из временной директории в рабочую, заменяя существующие
+          rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' temp_extract/ ./
+          
+          # Удаляем временные файлы
+          rm -rf temp_extract
+          rm -f temp_deploy.tar.gz
 
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
