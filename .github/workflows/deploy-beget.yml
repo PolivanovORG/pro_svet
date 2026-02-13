@@ -21,17 +21,7 @@ jobs:
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
           # Клонируем репозиторий в текущую папку (точка обязательна)
-          git pull
-          
-          
-          
-          # Обновляем права доступа к файлам
-          chmod +x manage.py
-          
-          # Создаем .env файл из .env.example и обновляем ALLOWED_HOSTS
-          cp .env.example .env
-          # Заменяем ALLOWED_HOSTS в .env файле
-          sed -i "s/ALLOWED_HOSTS=.*/ALLOWED_HOSTS=polivajh.beget.tech/" .env
+          git pull origin master
 
           # Подключаемся к Docker-контейнеру и выполняем команды
           ssh localhost -p222 "
