@@ -29,15 +29,16 @@ jobs:
           # Настроить Git для работы с владельцем директории
           git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
           
-          # Проверить, является ли директория git-репозиторием
-          if [ ! -d ".git" ]; then
-            echo "Initializing git repository..."
-            git init
-            git remote add origin ${{ secrets.GIT_REPO_URL }}
-          fi
+          # Проверить, существует ли удаленный репозиторий origin
+          REMOTE_EXISTS=$(git remote show origin > /dev/null 2>&1 && echo "exists" || echo "not_exists")
           
-          # Добавить удаленный репозиторий (на случай, если он изменился)
-          git remote set-url origin ${{ secrets.GIT_REPO_URL }}
+          if [ "$REMOTE_EXISTS" != "exists" ]; then
+            echo "Setting up remote origin..."
+            git remote add origin ${{ secrets.GIT_REPO_URL }}
+          else
+            echo "Remote origin already exists, updating URL..."
+            git remote set-url origin ${{ secrets.GIT_REPO_URL }}
+          fi
           
           # Извлечь последние изменения
           git fetch origin
