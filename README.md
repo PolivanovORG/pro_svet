@@ -280,6 +280,12 @@ print(get_random_secret_key())
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
+### Совместимость версий Python
+
+Проект использует Django 5.0+, который требует Python 3.10 или выше. При локальной разработке и деплое убедитесь, что используете Python 3.10 или выше.
+
+GitHub Actions проверяет совместимость на версиях Python 3.10 и 3.12.
+
 ---
 
 **Дата создания:** 12 февраля 2026
