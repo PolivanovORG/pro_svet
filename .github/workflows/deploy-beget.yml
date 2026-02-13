@@ -22,6 +22,9 @@ jobs:
           # Перейти в директорию проекта на сервере
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
+          # Настроить Git для работы с владельцем директории
+          git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
+          
           # Проверить, является ли директория git-репозиторием
           if [ ! -d ".git" ]; then
             echo "Initializing git repository..."
