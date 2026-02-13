@@ -253,7 +253,7 @@ python manage.py runserver
 
 Для безопасного деплоя настройте следующие секреты в настройках репозитория на GitHub (`Settings` → `Secrets and variables` → `Actions`):
 
-- `SECRET_KEY` - секретный ключ Django для продакшена
+- `SECRET_KEY` - секретный ключ Django для продакшена (должен быть длинным и случайным)
 - `DEBUG` - режим отладки (по умолчанию False для продакшена)
 - `ALLOWED_HOSTS` - разрешенные хосты для продакшена
 
@@ -264,6 +264,21 @@ python manage.py runserver
 - Запуск тестов
 - Проверка миграций
 - Проверка качества кода с помощью flake8
+
+### Генерация SECRET_KEY
+
+Для генерации безопасного SECRET_KEY в продакшене используйте следующий скрипт:
+
+```python
+from django.core.management.utils import get_random_secret_key
+print(get_random_secret_key())
+```
+
+Или в командной строке:
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
 ---
 

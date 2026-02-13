@@ -32,7 +32,9 @@ jobs:
       run: |
         if [ ! -f .env ]; then
           echo "Creating .env file with test values"
-          echo "SECRET_KEY=test-secret-key-for-ci" >> .env
+          # Генерируем достаточно длинный и случайный SECRET_KEY для тестов
+          SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(50))')
+          echo "SECRET_KEY=$SECRET_KEY" >> .env
           echo "DEBUG=True" >> .env
           echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
         fi
@@ -53,7 +55,7 @@ jobs:
         
     - name: Run tests
       run: |
-        python manage.py test pro_svet.tests
+        python manage.py test pro_svet.tests --verbosity=2
         
     - name: Check for unused imports and variables
       run: |
