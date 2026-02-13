@@ -20,11 +20,8 @@ jobs:
           # Подключаемся к серверу и переходим в папку public_html
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
-          # Удаляем все файлы в папке, включая скрытые
-          rm -rf * .* 2>/dev/null || true
-          
           # Клонируем репозиторий в текущую папку (точка обязательна)
-          git clone https://github.com/PolivanovORG/pro_svet.git .
+          git pull
           
           
           
@@ -54,7 +51,8 @@ jobs:
 
           # Собираем статические файлы
           python manage.py collectstatic --noinput
-
+          
+          ln -s public_html public
           # Создаем папку tmp и файл restart.txt для перезапуска приложения
           mkdir -p tmp
           touch tmp/restart.txt
