@@ -7,57 +7,80 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Upload project files to server
       uses: appleboy/scp-action@v0.1.4
       with:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
+        port: 22
         source: "."
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
         strip_components: 1
-        
+        overwrite: true
+
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
+        port: 22
         script: |
           # Перейти в директорию проекта
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
+
+          # Обновить права доступа к файлам
+          chmod +x manage.py
           
           # Подключиться к Docker-контейнеру и выполнить команды
-          # Скопировать SSH-ключ в Docker-контейнер для аутентификации
-          cat << 'EOF' > setup_ssh.sh
-          #!/bin/bash
-          ssh localhost -p222 "
-            # Установить зависимости в виртуальное окружение
-            python3 -m venv venv
-            source venv/bin/activate
-            pip install --upgrade pip
-            pip install -r ${{ secrets.BEGET_DEPLOY_PATH }}/requirements.txt
-            
-            # Собрать статические файлы
-            python manage.py collectstatic --noinput --settings=pro_core.settings
-            
-            # Выполнить миграции базы данных
-            python manage.py migrate --settings=pro_core.settings
-            
-            # Создать каталог tmp и файл restart.txt для перезапуска приложения
-            mkdir -p tmp
-            touch tmp/restart.txt
-            
-            # Вывести информацию о состоянии
-            echo 'Deployment completed successfully!'
-            pwd
-            ls -la
-          "
-          EOF
+          # На Beget Python-приложения работают внутри Docker-контейнера
+          ssh localhost -p222 << 'DOCKER_EOF'
           
-          chmod +x setup_ssh.sh
-          ./setup_ssh.sh
+          # Перейти в директорию проекта внутри Docker-контейнера
+          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          
+          # Установить или обновить виртуальное окружение
+          if [ ! -d "venv" ]; then
+            python3 -m venv venv
+          fi
+          source venv/bin/activate
+          
+          # Обновить pip и установить зависимости
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+          # Установить конкретную версию Django для совместимости
+          pip install --force-reinstall Django==5.2.11
+
+          # Собрать статические файлы
+          python manage.py collectstatic --noinput --settings=pro_core.settings
+
+          # Выполнить миграции базы данных
+          python manage.py migrate --settings=pro_core.settings
+
+          # Создать символьную ссылку public, указывающую на public_html (если не существует)
+          if [ ! -L "public" ] && [ -d "public_html" ]; then
+            ln -s public_html public
+          fi
+
+          # Создать каталог tmp и файл restart.txt для перезапуска приложения
+          mkdir -p tmp
+          touch tmp/restart.txt
+
+          # Вывести информацию о состоянии
+          echo 'Deployment completed successfully!'
+          echo 'Current directory:'
+          pwd
+          echo 'Files in current directory:'
+          ls -la
+          echo 'Virtual environment packages:'
+          pip list
+
+          DOCKER_EOF
