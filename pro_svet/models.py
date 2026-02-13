@@ -54,7 +54,8 @@ class UserProfile(models.Model):
     xp = models.IntegerField(default=0, verbose_name="Очки опыта")
     level = models.IntegerField(default=0, verbose_name="Уровень просветления")
     quote_notifications_enabled = models.BooleanField(default=True, verbose_name="Уведомления с цитатами")
-    
+    auto_continue_streak = models.BooleanField(default=False, verbose_name="Автоматически продлевать серию")
+
     def __str__(self):
         return f"Профиль {self.user.username}"
 

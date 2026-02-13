@@ -48,3 +48,9 @@ def has_any_record_for_today(user_dependency):
         return True
     except DailyRecord.DoesNotExist:
         return False
+
+
+@register.filter
+def get_item(dictionary, key):
+    """Get an item from a dictionary using a key"""
+    return dictionary.get(key)

@@ -61,6 +61,7 @@ def relapse_button_view(request, user_dependency_id):
 @login_required
 def profile_view(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
     user_dependencies = request.user.userdependency_set.all()
 
     # Calculate next level progress
@@ -105,6 +106,14 @@ def profile_view(request):
             progress_data['progress_percent'] = 0
 
     if request.method == 'POST':
+        # Handle auto-continue streak setting
+        auto_continue_streak = request.POST.get('auto_continue_streak')
+        if auto_continue_streak is not None:
+            user_profile.auto_continue_streak = bool(auto_continue_streak)
+            user_profile.save()
+            # Redirect to avoid resubmission on refresh
+            return redirect('profile')
+        
         # Handle daily abstinence marking
         dependency_id = request.POST.get('dependency_id')
         if dependency_id:
@@ -152,6 +161,17 @@ def profile_view(request):
                 user_dependency.total_days_abstained += 1
                 user_dependency.last_day_of_abstinence = today
                 user_dependency.save()
+
+                # Check if the user has completed a 150-day streak for light dependency
+                if (user_dependency.level and 
+                    user_dependency.level.level == 'light' and 
+                    user_dependency.current_streak == 150):
+                    
+                    # Award 1000 XP for completing the light dependency treatment
+                    user_profile.xp += 1000
+                    user_profile.save()  # Level will be updated via signal
+                    
+                    messages.success(request, f'Поздравляем! Вы завершили 150-дневный курс лечения зависимости "{user_dependency.dependency.name}"! Начислено 1000 XP!')
 
                 messages.success(request, f'Отметка о воздержании проставлена для "{user_dependency.dependency.name}". Начислено 10 XP!')
 

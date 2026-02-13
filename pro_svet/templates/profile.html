@@ -35,6 +35,25 @@
 
     <div class="bg-dark-card p-6 rounded-lg shadow-md theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
         <h2 class="text-xl font-semibold mb-4">Ваши зависимости</h2>
+        
+        <!-- Auto-continue streak setting -->
+        <div class="mb-6 p-4 bg-gray-800 rounded-lg">
+            <label class="flex items-center space-x-3">
+                <input type="checkbox" 
+                       onchange="this.form.submit()" 
+                       name="auto_continue_streak" 
+                       {% if user_profile.auto_continue_streak %}checked{% endif %}
+                       class="form-checkbox h-5 w-5 text-indigo-600">
+                <span class="text-gray-200">Автоматически продлевать серию</span>
+            </label>
+            <p class="mt-2 text-sm text-gray-400">
+                {% if user_profile.auto_continue_streak %}
+                    Включено: серия будет продлеваться автоматически, если вы не заходите на сайт более 48 часов
+                {% else %}
+                    Выключено: если вы не заходите на сайт более 48 часов, будет зафиксирован срыв
+                {% endif %}
+            </p>
+        </div>
 
         {% if user_dependencies %}
             <div class="overflow-x-auto">

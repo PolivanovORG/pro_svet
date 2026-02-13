@@ -1,7 +1,9 @@
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import UserProfile, LevelThreshold
+from django.db.models import F
+from .models import UserProfile, UserDependency, DailyRecord, LevelThreshold
+from datetime import timedelta
 
 
 @receiver(pre_save, sender=UserProfile)
@@ -28,3 +30,5 @@ def update_user_level_on_xp_change(sender, instance, **kwargs):
         except UserProfile.DoesNotExist:
             # Объект новый, уровень будет рассчитан при первом сохранении
             pass
+
+

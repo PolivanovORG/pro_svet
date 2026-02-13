@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block title %}Главная{% endblock %}
 
@@ -11,6 +12,56 @@
             <div class="bg-dark-card p-6 rounded-lg shadow-md border border-gray-700 theme-transition level-{% if user_profile %}{% if user_profile.level > 10 %}10{% else %}{{ user_profile.level|default:0 }}{% endif %}{% else %}0{% endif %}">
                 <h2 class="text-xl font-bold mb-3">{{ dependency.name }}</h2>
                 <p class="mb-4 text-gray-300">{{ dependency.description|truncatewords:30 }}</p>
+                
+                <!-- Progress bar for logged-in users -->
+                {% if user.is_authenticated %}
+                    {% with user_dependencies|get_item:dependency.id as user_dep %}
+                        {% if user_dep %}
+                            <div class="mb-4">
+                                {% if user_dep.level %}
+                                    <div class="text-sm mb-1">
+                                        Уровень: {{ user_dep.level.get_level_display }}
+                                    </div>
+                                    
+                                    <!-- Progress bar -->
+                                    {% if user_dep.level.level == 'light' %}
+                                        <!-- Light dependency: 150 days to complete -->
+                                        {% widthratio user_dep.current_streak 150 100 as progress_percent %}
+                                        <div class="w-full bg-gray-700 rounded-full h-2 mb-1">
+                                            <div class="bg-green-500 h-2 rounded-full" style="width: {{ progress_percent }}%"></div>
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ user_dep.current_streak }}/150 дней
+                                        </div>
+                                    {% elif user_dep.level.level == 'medium' %}
+                                        <!-- Medium dependency: 350 days to complete -->
+                                        {% widthratio user_dep.current_streak 350 100 as progress_percent %}
+                                        <div class="w-full bg-gray-700 rounded-full h-2 mb-1">
+                                            <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ progress_percent }}%"></div>
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ user_dep.current_streak }}/350 дней
+                                        </div>
+                                    {% elif user_dep.level.level == 'heavy' %}
+                                        <!-- Heavy dependency: 700 days to complete -->
+                                        {% widthratio user_dep.current_streak 700 100 as progress_percent %}
+                                        <div class="w-full bg-gray-700 rounded-full h-2 mb-1">
+                                            <div class="bg-red-500 h-2 rounded-full" style="width: {{ progress_percent }}%"></div>
+                                        </div>
+                                        <div class="text-xs text-gray-400">
+                                            {{ user_dep.current_streak }}/700 дней
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-sm text-gray-500 italic">
+                                        Не начато
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+                
                 <a href="{% url 'dependency_detail' dependency.slug %}" class="inline-block bg-indigo-600 text-white py-2 px-4 rounded hover:bg-indigo-700 transition">
                     Подробнее
                 </a>

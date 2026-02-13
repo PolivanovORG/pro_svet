@@ -20,8 +20,21 @@ def home_view(request):
     """Main page showing all dependencies"""
     dependencies = Dependency.objects.filter(is_preset=True)  # Show only preset dependencies
 
+    # If user is authenticated, get their dependency progress
+    user_dependencies = {}
+    if request.user.is_authenticated:
+        from django.db.models import Prefetch
+        user_deps = UserDependency.objects.filter(
+            user=request.user,
+            dependency__in=dependencies
+        ).select_related('level', 'dependency')
+        
+        for user_dep in user_deps:
+            user_dependencies[user_dep.dependency.id] = user_dep
+
     context = {
-        'dependencies': dependencies
+        'dependencies': dependencies,
+        'user_dependencies': user_dependencies,
     }
     return render(request, 'home.html', context=context)
 
