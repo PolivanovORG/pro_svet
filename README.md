@@ -480,6 +480,7 @@ jobs:
 - `BEGET_USERNAME` - имя пользователя для SSH (обычно такое же, как в панели управления)
 - `BEGET_SSH_PRIVATE_KEY` - приватный SSH ключ
 - `BEGET_DEPLOY_PATH` - путь до директории проекта на сервере (обычно /home/username/domains/ваш_домен/)
+- `GIT_REPO_URL` - URL-адрес Git-репозитория для обновления кода (например, https://github.com/username/repository.git или git@github.com:username/repository.git)
 
 Пример workflow для деплоя на Beget (`.github/workflows/deploy-beget.yml`):
 

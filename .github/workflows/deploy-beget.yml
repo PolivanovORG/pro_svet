@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Deploy files to server via git
+    - name: Initialize git repo and pull latest code
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.BEGET_HOST }}
@@ -22,8 +22,19 @@ jobs:
           # Перейти в директорию проекта на сервере
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
-          # Обновить код из репозитория
-          git pull origin main || git pull origin master
+          # Проверить, является ли директория git-репозиторием
+          if [ ! -d ".git" ]; then
+            echo "Initializing git repository..."
+            git init
+            git remote add origin ${{ secrets.GIT_REPO_URL }}
+          fi
+          
+          # Добавить удаленный репозиторий (на случай, если он изменился)
+          git remote set-url origin ${{ secrets.GIT_REPO_URL }}
+          
+          # Извлечь последние изменения
+          git fetch origin
+          git reset --hard origin/main || git reset --hard origin/master
           
           # Убедиться, что все файлы обновлены
           git status
