@@ -286,6 +286,193 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 GitHub Actions проверяет совместимость на версиях Python 3.10 и 3.12.
 
+## 13. Настройка CD (Continuous Deployment)
+
+Для автоматического деплоя приложения можно использовать GitHub Actions с различными провайдерами хостинга.
+
+### Деплой на Vercel
+
+1. Создайте аккаунт на [Vercel](https://vercel.com)
+2. Установите CLI: `npm i -g vercel`
+3. Свяжите проект: `vercel link`
+4. Добавьте следующие секреты в GitHub:
+   - `VERCEL_TOKEN` - токен API Vercel
+   - `VERCEL_ORG_ID` - ID вашей организации в Vercel
+   - `VERCEL_PROJECT_ID` - ID вашего проекта в Vercel
+5. Убедитесь, что в корне проекта есть файл `vercel.json` для правильной конфигурации Django-приложения
+
+Пример workflow для деплоя на Vercel (`.github/workflows/deploy-vercel.yml`):
+
+```yaml
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel
+      
+    - name: Deploy to Vercel
+      run: |
+        vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --force
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+```
+
+#### Особенности деплоя Django на Vercel
+
+Для правильного деплоя Django-приложения на Vercel необходимо:
+
+1. В корне проекта создать файл `vercel.json` с конфигурацией приложения
+2. Убедиться, что все зависимости указаны в `requirements.txt`
+3. Настроить статические файлы через `collectstatic`
+4. Использовать экземпляр WSGI для обработки запросов
+
+Файл `vercel.json` в этом проекте уже настроен для корректной работы Django-приложения.
+
+### Деплой на Heroku
+
+1. Создайте аккаунт на [Heroku](https://heroku.com)
+2. Установите CLI: `heroku login`
+3. Создайте приложение: `heroku create your-app-name`
+4. Добавьте следующие секреты в GitHub:
+   - `HEROKU_API_KEY` - API ключ Heroku
+   - `HEROKU_APP_NAME` - название вашего приложения на Heroku
+
+Пример workflow для деплоя на Heroku (`.github/workflows/deploy-heroku.yml`):
+
+```yaml
+name: Deploy to Heroku
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        
+    - name: Deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+        heroku_email: your-email@example.com
+        usedocker: false
+        requirements_file: requirements.txt
+```
+
+### Деплой на PythonAnywhere
+
+1. Создайте аккаунт на [PythonAnywhere](https://pythonanywhere.com)
+2. Добавьте следующие секреты в GitHub:
+   - `PYTHONANYWHERE_USERNAME` - ваш username на PythonAnywhere
+   - `PYTHONANYWHERE_API_KEY` - API ключ (можно получить в Account → API token)
+   - `PYTHONANYWHERE_HOSTNAME` - ваш hostname (обычно username.pythonanywhere.com)
+
+Пример workflow для деплоя на PythonAnywhere (`.github/workflows/deploy-pythonanywhere.yml`):
+
+```yaml
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to PythonAnywhere
+      run: |
+        curl -X POST https://www.pythonanywhere.com/api/v0/user/${{ secrets.PYTHONANYWHERE_USERNAME }}/files/path/to/your/project \
+          -H "Authorization: Token ${{ secrets.PYTHONANYWHERE_API_KEY }}" \
+          -F "content=<." -F "path=."
+          
+    - name: Restart application
+      run: |
+        curl -X POST https://www.pythonanywhere.com/api/v0/user/${{ secrets.PYTHONANYWHERE_USERNAME }}/webapps/${{ secrets.PYTHONANYWHERE_HOSTNAME }}/reload/ \
+          -H "Authorization: Token ${{ secrets.PYTHONANYWHERE_API_KEY }}"
+```
+
+### Деплой на собственный сервер через SSH
+
+Если вы хотите деплоить на собственный сервер, добавьте следующие секреты в GitHub:
+- `SSH_HOST` - адрес вашего сервера
+- `SSH_USERNAME` - имя пользователя для SSH
+- `SSH_PRIVATE_KEY` - приватный SSH ключ
+- `DEPLOY_PATH` - путь до директории проекта на сервере
+
+Пример workflow для деплоя на собственный сервер (`.github/workflows/deploy-ssh.yml`):
+
+```yaml
+name: Deploy to Server via SSH
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "."
+        target: "${{ secrets.DEPLOY_PATH }}"
+        strip_components: 1
+        
+    - name: Run deployment commands
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd ${{ secrets.DEPLOY_PATH }}
+          source venv/bin/activate  # или путь к вашему виртуальному окружению
+          pip install -r requirements.txt
+          python manage.py collectstatic --noinput
+          python manage.py migrate
+          sudo systemctl restart gunicorn  # или ваш способ перезапуска приложения
+```
+
 ---
 
 **Дата создания:** 12 февраля 2026

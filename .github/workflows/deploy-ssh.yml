@@ -1,0 +1,36 @@
+# name: Deploy to Server via SSH
+
+# on:
+#   push:
+#     branches: [ main, master ]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#     - uses: actions/checkout@v4
+    
+#     - name: Deploy to server
+#       uses: appleboy/scp-action@v0.1.4
+#       with:
+#         host: ${{ secrets.SSH_HOST }}
+#         username: ${{ secrets.SSH_USERNAME }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         source: "."
+#         target: "${{ secrets.DEPLOY_PATH }}"
+#         strip_components: 1
+        
+#     - name: Run deployment commands
+#       uses: appleboy/ssh-action@v0.1.5
+#       with:
+#         host: ${{ secrets.SSH_HOST }}
+#         username: ${{ secrets.SSH_USERNAME }}
+#         key: ${{ secrets.SSH_PRIVATE_KEY }}
+#         script: |
+#           cd ${{ secrets.DEPLOY_PATH }}
+#           source venv/bin/activate  # или путь к вашему виртуальному окружению
+#           pip install -r requirements.txt
+#           python manage.py collectstatic --noinput
+#           python manage.py migrate
+#           sudo systemctl restart gunicorn  # или ваш способ перезапуска приложения

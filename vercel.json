@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "name": "prosvet",
+  "builds": [
+    {
+      "src": "pro_core/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "media/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/media/(.*)",
+      "dest": "/media/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "pro_core/wsgi.py"
+    }
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "pro_core.settings",
+    "DEBUG": "False",
+    "ALLOWED_HOSTS": "*.vercel.app"
+  }
+}
