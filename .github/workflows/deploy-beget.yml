@@ -32,28 +32,32 @@ jobs:
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
           # Подключиться к Docker-контейнеру и выполнить команды
-          ssh localhost -p222 << 'DOCKER_EOF'
-          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          # Скопировать SSH-ключ в Docker-контейнер для аутентификации
+          cat << 'EOF' > setup_ssh.sh
+          #!/bin/bash
+          ssh localhost -p222 "
+            # Установить зависимости в виртуальное окружение
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r ${{ secrets.BEGET_DEPLOY_PATH }}/requirements.txt
+            
+            # Собрать статические файлы
+            python manage.py collectstatic --noinput --settings=pro_core.settings
+            
+            # Выполнить миграции базы данных
+            python manage.py migrate --settings=pro_core.settings
+            
+            # Создать каталог tmp и файл restart.txt для перезапуска приложения
+            mkdir -p tmp
+            touch tmp/restart.txt
+            
+            # Вывести информацию о состоянии
+            echo 'Deployment completed successfully!'
+            pwd
+            ls -la
+          "
+          EOF
           
-          # Установить зависимости в виртуальное окружение
-          python3 -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          
-          # Собрать статические файлы
-          python manage.py collectstatic --noinput --settings=pro_core.settings
-          
-          # Выполнить миграции базы данных
-          python manage.py migrate --settings=pro_core.settings
-          
-          # Создать каталог tmp и файл restart.txt для перезапуска приложения
-          mkdir -p tmp
-          touch tmp/restart.txt
-          
-          # Вывести информацию о состоянии
-          echo 'Deployment completed successfully!'
-          pwd
-          ls -la
-          
-          DOCKER_EOF
+          chmod +x setup_ssh.sh
+          ./setup_ssh.sh
