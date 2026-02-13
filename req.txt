@@ -1,29 +1,37 @@
-# Django Framework
-Django
-django-cors-headers
-
-# Database
-# Using SQLite for development as mentioned in README (no additional packages needed)
-
-# Frontend Dependencies
-# Chart.js for visualization (to be included via CDN in templates)
-# Tailwind CSS (to be configured separately)
-
-# Authentication & Security
-django-allauth
-argon2-cffi
-
-# Date/Time Handling
-python-dateutil
-
-# Utilities
-Pillow # For image handling
-celery  # For scheduled tasks (notifications)
-redis  # For Celery backend
-
-# Email notifications
-django-celery-beat
-django-celery-email
-
-# Development tools
-django-debug-toolbar
+amqp==5.3.1
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
+asgiref==3.11.1
+billiard==4.2.4
+celery==5.6.2
+cffi==2.0.0
+click==8.3.1
+click-didyoumean==0.3.1
+click-plugins==1.1.1.2
+click-repl==0.3.0
+colorama==0.4.6
+cron_descriptor==2.0.6
+Django==5.2.11
+django-allauth==65.14.1
+django-appconf==1.2.0
+django-celery-beat==2.8.1
+django-celery-email==3.0.0
+django-cors-headers==4.9.0
+django-debug-toolbar==6.2.0
+django-timezone-field==7.2.1
+kombu==5.6.2
+packaging==26.0
+pillow==12.1.1
+prompt_toolkit==3.0.52
+pycparser==3.0
+python-crontab==3.3.0
+python-dateutil==2.9.0.post0
+python-decouple==3.8
+redis==7.1.1
+six==1.17.0
+sqlparse==0.5.5
+typing_extensions==4.15.0
+tzdata==2025.3
+tzlocal==5.3.1
+vine==5.1.0
+wcwidth==0.6.0
