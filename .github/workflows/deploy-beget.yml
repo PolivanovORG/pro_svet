@@ -19,7 +19,7 @@ jobs:
         script: |
           # Подключаемся к серверу и переходим в папку public_html
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
-          
+          git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
           # Клонируем репозиторий в текущую папку (точка обязательна)
           git pull
           
