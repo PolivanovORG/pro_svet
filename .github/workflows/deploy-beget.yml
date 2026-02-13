@@ -21,7 +21,7 @@ jobs:
       with:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
-        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         script: |
           # Удаляем старые файлы проекта, но оставляем .git и другие системные файлы
@@ -33,7 +33,7 @@ jobs:
       with:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
-        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         source: "./temp_deploy/*"
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
@@ -45,8 +45,7 @@ jobs:
       with:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
-        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
-        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
+        password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         script: |
           # Перейти в директорию проекта
@@ -54,24 +53,24 @@ jobs:
 
           # Обновить права доступа к файлам
           chmod +x manage.py
-          
+
           # Подключиться к Docker-контейнеру и выполнить команды
           # На Beget Python-приложения работают внутри Docker-контейнера
           ssh localhost -p222 << 'DOCKER_EOF'
-          
+
           # Перейти в директорию проекта внутри Docker-контейнера
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
-          
+
           # Установить или обновить виртуальное окружение
           if [ ! -d "venv" ]; then
             python3 -m venv venv
           fi
           source venv/bin/activate
-          
+
           # Обновить pip и установить зависимости
           pip install --upgrade pip
           pip install -r requirements.txt
-          
+
           # Установить конкретную версию Django для совместимости
           pip install --force-reinstall Django==5.2.11
 
