@@ -11,6 +11,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Create temp directory and copy files
+      run: |
+        mkdir -p temp_deploy
+        rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' . ./temp_deploy/
+        
     - name: Upload project files to server
       uses: appleboy/scp-action@v0.1.4
       with:
@@ -19,13 +24,7 @@ jobs:
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
         password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
         port: 22
-        source: |
-          .
-          !.git/
-          !.gitignore
-          !.env
-          !venv/
-          !env/
+        source: "./temp_deploy/*"
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
         strip_components: 1
         overwrite: true
