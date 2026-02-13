@@ -1,2 +1,5 @@
-PassengerEnabled On
-PassengerPython /home/p/polivajh/polivajh.beget.tech/public_html/venv/bin/python3
+PassengerEnabled on
+PassengerAppType wsgi
+PassengerPython /usr/bin/python3
+PassengerStartupFile passenger_wsgi.py
+PassengerAppRoot /home/p/polivajh/prosvet/public_html

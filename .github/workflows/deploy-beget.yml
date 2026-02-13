@@ -9,9 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Initialize git repo and pull latest code
+    - name: Deploy to Beget server
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.BEGET_HOST }}
@@ -19,125 +17,52 @@ jobs:
         password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         script: |
-          # Перейти в директорию проекта на сервере
+          # Подключаемся к серверу и переходим в папку public_html
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
-          # Вывести текущую директорию и содержимое для отладки
-          pwd
-          ls -la
+          # Удаляем все файлы в папке, включая скрытые
+          rm -rf * .* 2>/dev/null || true
           
-          # Настроить Git для работы с владельцем директории
-          git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
+          # Клонируем репозиторий в текущую папку (точка обязательна)
+          git clone https://github.com/PolivanovORG/pro_svet.git .
           
-          # Проверить, существует ли удаленный репозиторий origin
-          REMOTE_EXISTS=$(git remote show origin > /dev/null 2>&1 && echo "exists" || echo "not_exists")
           
-          if [ "$REMOTE_EXISTS" != "exists" ]; then
-            echo "Setting up remote origin..."
-            git remote add origin ${{ secrets.GIT_REPO_URL }}
-          else
-            echo "Remote origin already exists, updating URL..."
-            git remote set-url origin ${{ secrets.GIT_REPO_URL }}
-          fi
           
-          # Извлечь последние изменения
-          git fetch origin
-          
-          # Проверить наличие ветки main или master
-          BRANCH_EXISTS=$(git ls-remote --heads origin | grep -E 'refs/heads/(main|master)' | head -n1 | awk '{print $2}' | sed 's/refs\/heads\///')
-          if [ -z "$BRANCH_EXISTS" ]; then
-            echo "ERROR: Neither main nor master branch found in remote repository"
-            exit 1
-          fi
-          
-          echo "Found branch: $BRANCH_EXISTS"
-          
-          # Установить ветку и извлечь изменения
-          git checkout -B $BRANCH_EXISTS origin/$BRANCH_EXISTS
-          git reset --hard origin/$BRANCH_EXISTS
-          
-          # Убедиться, что все файлы обновлены
-          echo "Repository status:"
-          git status
-          echo "Contents after git pull:"
-          ls -la
-
-    - name: Run deployment commands on Beget
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.BEGET_HOST }}
-        username: ${{ secrets.BEGET_USERNAME }}
-        password: ${{ secrets.BEGET_PASSWORD }}
-        port: 22
-        script: |
-          # Перейти в директорию проекта
-          cd ${{ secrets.BEGET_DEPLOY_PATH }}
-
-          # Проверить, что файлы успешно скопированы
-          if [ ! -f "manage.py" ]; then
-            echo "ERROR: manage.py not found! Check git clone."
-            exit 1
-          fi
-
-          # Обновить права доступа к файлам
+          # Обновляем права доступа к файлам
           chmod +x manage.py
+          
+          # Создаем .env файл из .env.example и обновляем ALLOWED_HOSTS
+          cp .env.example .env
+          # Заменяем ALLOWED_HOSTS в .env файле
+          sed -i "s/ALLOWED_HOSTS=.*/ALLOWED_HOSTS=polivajh.beget.tech/" .env
 
-          # Подключиться к Docker-контейнеру и выполнить команды
-          # На Beget Python-приложения работают внутри Docker-контейнера
+          # Подключаемся к Docker-контейнеру и выполняем команды
           ssh localhost -p222 "
-          # Перейти в директорию проекта внутри Docker-контейнера
+          # Переходим в директорию проекта внутри Docker-контейнера
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
 
-          # Установить или обновить виртуальное окружение
-          if [ ! -d \"venv\" ]; then
-            python3 -m venv venv
-          fi
+          # Создаем и активируем виртуальное окружение
+          python3 -m venv venv
           source venv/bin/activate
 
-          # Обновить pip и установить зависимости
+          # Устанавливаем зависимости
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-ci.txt
 
-          # Установить конкретную версию Django для совместимости
-          pip install --force-reinstall Django==5.2.11
+          # Выполняем миграции
+          python manage.py migrate
 
-          # Собрать статические файлы
-          python manage.py collectstatic --noinput --settings=pro_core.settings
+          # Собираем статические файлы
+          python manage.py collectstatic --noinput
 
-          # Выполнить миграции базы данных
-          python manage.py migrate --settings=pro_core.settings
-
-          # Создать символьную ссылку public, указывающую на public_html (если не существует)
-          if [ ! -L \"public\" ] && [ -d \"public_html\" ]; then
-            ln -s public_html public
-          fi
-
-          # Создать каталог tmp и файл restart.txt для перезапуска приложения
+          # Создаем папку tmp и файл restart.txt для перезапуска приложения
           mkdir -p tmp
           touch tmp/restart.txt
 
-          # Убедиться, что файлы passenger_wsgi.py и .htaccess существуют и имеют правильные пути
-          # Обновить пути в passenger_wsgi.py если они отличаются
-          if [ -f \"passenger_wsgi.py\" ]; then
-              # Заменить пути в passenger_wsgi.py на правильные для текущего размещения
-              sed -i \"s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g\" passenger_wsgi.py
-          else
-              echo \"ERROR: passenger_wsgi.py not found!\"
-          fi
-          
-          if [ -f \".htaccess\" ]; then
-              # Заменить пути в .htaccess на правильные для текущего размещения
-              sed -i \"s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g\" .htaccess
-          else
-              echo \"ERROR: .htaccess not found!\"
-          fi
-
-          # Вывести информацию о состоянии
+          # Выводим информацию о состоянии
           echo 'Deployment completed successfully!'
           echo 'Current directory:'
           pwd
-          echo 'Files in current directory:'
-          ls -la
           echo 'Virtual environment packages:'
           pip list
           "
