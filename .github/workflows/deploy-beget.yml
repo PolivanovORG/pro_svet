@@ -1,0 +1,59 @@
+name: Deploy to Beget via SSH
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Upload project files to server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        source: "."
+        target: "${{ secrets.BEGET_DEPLOY_PATH }}"
+        strip_components: 1
+        
+    - name: Run deployment commands on Beget
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        script: |
+          # Перейти в директорию проекта
+          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          
+          # Подключиться к Docker-контейнеру и выполнить команды
+          ssh localhost -p222 << 'DOCKER_EOF'
+          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          
+          # Установить зависимости в виртуальное окружение
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+          # Собрать статические файлы
+          python manage.py collectstatic --noinput --settings=pro_core.settings
+          
+          # Выполнить миграции базы данных
+          python manage.py migrate --settings=pro_core.settings
+          
+          # Создать каталог tmp и файл restart.txt для перезапуска приложения
+          mkdir -p tmp
+          touch tmp/restart.txt
+          
+          # Вывести информацию о состоянии
+          echo 'Deployment completed successfully!'
+          pwd
+          ls -la
+          
+          DOCKER_EOF

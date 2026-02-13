@@ -473,6 +473,143 @@ jobs:
           sudo systemctl restart gunicorn  # или ваш способ перезапуска приложения
 ```
 
+### Деплой на Beget
+
+Для деплоя на хостинг Beget (например, ваш домен polivajh.beget.tech), добавьте следующие секреты в GitHub:
+- `BEGET_HOST` - адрес вашего сервера Beget (например, polivajh.beget.tech)
+- `BEGET_USERNAME` - имя пользователя для SSH (обычно такое же, как в панели управления)
+- `BEGET_SSH_PRIVATE_KEY` - приватный SSH ключ
+- `BEGET_DEPLOY_PATH` - путь до директории проекта на сервере (обычно /home/username/domains/ваш_домен/)
+
+Пример workflow для деплоя на Beget (`.github/workflows/deploy-beget.yml`):
+
+```yaml
+name: Deploy to Beget via SSH
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Beget server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        source: "."
+        target: "${{ secrets.BEGET_DEPLOY_PATH }}"
+        strip_components: 1
+        
+    - name: Run deployment commands on Beget
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        script: |
+          # Перейти в директорию проекта
+          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          
+          # Подключиться к Docker-контейнеру
+          ssh localhost -p222 << 'DOCKER_EOF'
+          
+          # Перейти во временный каталог
+          cd ~/.beget/tmp || (mkdir -p ~/.beget/tmp && cd ~/.beget/tmp)
+          
+          # Установить зависимости в виртуальное окружение
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+          # Собрать статические файлы
+          python manage.py collectstatic --noinput --settings=pro_core.settings
+          
+          # Выполнить миграции базы данных
+          python manage.py migrate --settings=pro_core.settings
+          
+          # Создать файл passenger_wsgi.py для Beget
+          cat > passenger_wsgi.py << 'PASS_EOF'
+# -*- coding: utf-8 -*-
+import os, sys
+sys.path.insert(0, '/home/p/polivajh/polivajh.beget.tech/public_html')
+sys.path.insert(1, '/home/p/polivajh/polivajh.beget.tech/public_html/venv/lib/python3.10/site-packages')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'pro_core.settings'
+from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
+PASS_EOF
+          
+          # Создать .htaccess файл
+          cat > .htaccess << 'HTACCESS_EOF'
+PassengerEnabled On
+PassengerPython /home/p/polivajh/polivajh.beget.tech/public_html/venv/bin/python3
+HTACCESS_EOF
+          
+          # Создать каталог tmp и файл restart.txt для перезапуска приложения
+          mkdir -p tmp
+          touch tmp/restart.txt
+          
+          # Вывести информацию о состоянии
+          echo "Deployment completed successfully!"
+          pwd
+          ls -la
+          
+          DOCKER_EOF
+```
+
+#### Как настроить SSH-ключи для Beget
+
+1. **Создайте SSH-ключи локально** (если ещё не созданы):
+   ```bash
+   ssh-keygen -t rsa -b 4096 -C "WorldOfPets@users.noreply.github.com"
+   ```
+   
+2. **Подключитесь к серверу Beget по SSH**:
+   ```bash
+   ssh polivajh_githubcd@polivajh.beget.tech
+   ```
+   
+3. **Внутри сессии на основном сервере подключитесь к Docker-контейнеру**:
+   ```bash
+   ssh localhost -p222
+   ```
+   
+4. **Создайте директорию .ssh и добавьте публичный ключ**:
+   ```bash
+   mkdir -p ~/.ssh
+   nano ~/.ssh/authorized_keys
+   ```
+   
+5. **Скопируйте содержимое вашего публичного ключа** (файл `~/.ssh/id_rsa.pub` на вашем локальном компьютере) и вставьте его в файл `~/.ssh/authorized_keys` на сервере
+   
+6. **Установите правильные права доступа**:
+   ```bash
+   chmod 700 ~/.ssh
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+   
+7. **В GitHub добавьте следующие секреты**:
+   - `BEGET_HOST`: `polivajh.beget.tech`
+   - `BEGET_USERNAME`: `polivajh_githubcd`
+   - `BEGET_SSH_PRIVATE_KEY`: содержимое вашего приватного ключа (файл `~/.ssh/id_rsa`)
+   - `BEGET_DEPLOY_PATH`: `/home/p/polivajh/polivajh.beget.tech/public_html`
+
+#### Особенности деплоя на Beget
+
+1. Убедитесь, что у вас включён SSH-доступ в панели управления Beget
+2. Сгенерируйте SSH-ключи и добавьте публичный ключ в панель управления
+3. Настройте доменную зону и указатели в панели управления Beget
+4. Убедитесь, что Python 3.10+ установлен на сервере
+5. Для перезапуска приложения на shared-хостинге Beget используется команда `touch` на wsgi-файле
+6. На Beget используется Docker-контейнер для Python-приложений, поэтому в скрипте используется дополнительный уровень SSH-соединения
+
 ---
 
 **Дата создания:** 12 февраля 2026
