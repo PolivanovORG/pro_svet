@@ -15,7 +15,15 @@ jobs:
       run: |
         mkdir -p temp_deploy
         rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' . ./temp_deploy/
-        tar -czf temp_deploy.tar.gz -C temp_deploy .
+        # Используем уникальное имя файла для избежания конфликта
+        tar -czf temp_deploy_project_$(date +%s).tar.gz -C temp_deploy .
+
+    # Найдем имя созданного архива и сохраним его в переменной
+    - name: Find archive file
+      run: |
+        ARCHIVE_FILE=$(ls temp_deploy_project_*.tar.gz | head -n 1)
+        echo "ARCHIVE_FILE=$ARCHIVE_FILE" >> $GITHUB_ENV
+        echo "Archive file is: $ARCHIVE_FILE"
 
     - name: Upload compressed project files to server
       uses: appleboy/scp-action@v0.1.4
@@ -24,7 +32,7 @@ jobs:
         username: ${{ secrets.BEGET_USERNAME }}
         password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
-        source: "temp_deploy.tar.gz"
+        source: "${{ env.ARCHIVE_FILE }}"
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
         rm: true
 
@@ -37,16 +45,19 @@ jobs:
         port: 22
         script: |
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          # Найти недавно загруженный архив и распаковать его
+          ARCHIVE_FILE=$(ls -t temp_deploy_project_*.tar.gz | head -n 1)
+          
           # Извлекаем архив в новую директорию
           mkdir -p temp_extract
-          tar -xzf temp_deploy.tar.gz -C temp_extract
+          tar -xzf "$ARCHIVE_FILE" -C temp_extract
           
           # Копируем файлы из временной директории в рабочую, заменяя существующие
           rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' temp_extract/ ./
           
           # Удаляем временные файлы
           rm -rf temp_extract
-          rm -f temp_deploy.tar.gz
+          rm -f "$ARCHIVE_FILE"
 
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
