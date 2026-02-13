@@ -24,9 +24,6 @@ jobs:
           git pull origin master
 
           # Подключаемся к Docker-контейнеру и выполняем команды
-          ssh localhost -p222 "
-          # Переходим в директорию проекта внутри Docker-контейнера
-          cd ${{ secrets.BEGET_DEPLOY_PATH }}
 
           # Создаем и активируем виртуальное окружение
           python3 -m venv venv
@@ -53,4 +50,4 @@ jobs:
           pwd
           echo 'Virtual environment packages:'
           pip list
-          "
+          
