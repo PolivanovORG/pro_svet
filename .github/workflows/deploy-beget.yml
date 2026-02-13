@@ -22,6 +22,10 @@ jobs:
           # Перейти в директорию проекта на сервере
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
           
+          # Вывести текущую директорию и содержимое для отладки
+          pwd
+          ls -la
+          
           # Настроить Git для работы с владельцем директории
           git config --global --add safe.directory ${{ secrets.BEGET_DEPLOY_PATH }}
           
@@ -37,10 +41,25 @@ jobs:
           
           # Извлечь последние изменения
           git fetch origin
-          git reset --hard origin/main || git reset --hard origin/master
+          
+          # Проверить наличие ветки main или master
+          BRANCH_EXISTS=$(git ls-remote --heads origin | grep -E 'refs/heads/(main|master)' | head -n1 | awk '{print $2}' | sed 's/refs\/heads\///')
+          if [ -z "$BRANCH_EXISTS" ]; then
+            echo "ERROR: Neither main nor master branch found in remote repository"
+            exit 1
+          fi
+          
+          echo "Found branch: $BRANCH_EXISTS"
+          
+          # Установить ветку и извлечь изменения
+          git checkout -B $BRANCH_EXISTS origin/$BRANCH_EXISTS
+          git reset --hard origin/$BRANCH_EXISTS
           
           # Убедиться, что все файлы обновлены
+          echo "Repository status:"
           git status
+          echo "Contents after git pull:"
+          ls -la
 
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
