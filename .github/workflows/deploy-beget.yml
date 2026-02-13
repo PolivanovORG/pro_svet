@@ -16,6 +16,19 @@ jobs:
         mkdir -p temp_deploy
         rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' . ./temp_deploy/
         
+    - name: Clean old project files on server
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.BEGET_HOST }}
+        username: ${{ secrets.BEGET_USERNAME }}
+        key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
+        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
+        port: 22
+        script: |
+          # Удаляем старые файлы проекта, но оставляем .git и другие системные файлы
+          cd ${{ secrets.BEGET_DEPLOY_PATH }}
+          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name '.env' ! -name 'venv' ! -name 'env' ! -name 'tmp' -exec rm -rf {} + 2>/dev/null || true
+
     - name: Upload project files to server
       uses: appleboy/scp-action@v0.1.4
       with:
