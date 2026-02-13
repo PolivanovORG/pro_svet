@@ -25,7 +25,8 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Установка зависимостей с гибкими версиями для CI
+        pip install -r requirements-ci.txt
         
     - name: Check for .env file existence
       run: |

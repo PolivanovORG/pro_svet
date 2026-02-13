@@ -1,0 +1,7 @@
+Django>=5.0,<6.0
+python-decouple
+celery>=5.0
+redis
+pillow
+django-allauth
+django-cors-headers
