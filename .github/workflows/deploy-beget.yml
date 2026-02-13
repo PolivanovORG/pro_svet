@@ -19,10 +19,17 @@ jobs:
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
         password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
         port: 22
-        source: "."
+        source: |
+          .
+          !.git/
+          !.gitignore
+          !.env
+          !venv/
+          !env/
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
         strip_components: 1
         overwrite: true
+        rm: true
 
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
