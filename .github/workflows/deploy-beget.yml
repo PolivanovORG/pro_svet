@@ -53,15 +53,14 @@ jobs:
           # Перейти в директорию проекта
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
 
+          # Проверить, что файлы успешно скопированы
+          if [ ! -f "manage.py" ]; then
+            echo "ERROR: manage.py not found! Check git clone."
+            exit 1
+          fi
+
           # Обновить права доступа к файлам
           chmod +x manage.py
-
-          # Подключиться к Docker-контейнеру и выполнить команды
-          # На Beget Python-приложения работают внутри Docker-контейнера
-          ssh localhost -p222 << 'DOCKER_EOF'
-
-          # Перейти в директорию проекта внутри Docker-контейнера
-          cd ${{ secrets.BEGET_DEPLOY_PATH }}
 
           # Установить или обновить виртуальное окружение
           if [ ! -d "venv" ]; then
@@ -99,5 +98,3 @@ jobs:
           ls -la
           echo 'Virtual environment packages:'
           pip list
-
-          DOCKER_EOF
