@@ -22,7 +22,6 @@ jobs:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
-        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
         port: 22
         script: |
           # Удаляем старые файлы проекта, но оставляем .git и другие системные файлы
@@ -35,7 +34,6 @@ jobs:
         host: ${{ secrets.BEGET_HOST }}
         username: ${{ secrets.BEGET_USERNAME }}
         key: ${{ secrets.BEGET_SSH_PRIVATE_KEY }}
-        password: ${{ secrets.BEGET_PASSWORD }}  # Поддержка парольной аутентификации
         port: 22
         source: "./temp_deploy/*"
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
