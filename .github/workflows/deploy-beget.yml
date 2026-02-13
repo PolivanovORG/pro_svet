@@ -11,32 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Create temp directory and compress files
-      run: |
-        mkdir -p temp_deploy
-        rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' . ./temp_deploy/
-        # Используем уникальное имя файла для избежания конфликта
-        tar -czf temp_deploy_project_$(date +%s).tar.gz -C temp_deploy .
-
-    # Найдем имя созданного архива и сохраним его в переменной
-    - name: Find archive file
-      run: |
-        ARCHIVE_FILE=$(ls temp_deploy_project_*.tar.gz | head -n 1)
-        echo "ARCHIVE_FILE=$ARCHIVE_FILE" >> $GITHUB_ENV
-        echo "Archive file is: $ARCHIVE_FILE"
-
-    - name: Upload compressed project files to server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.BEGET_HOST }}
-        username: ${{ secrets.BEGET_USERNAME }}
-        password: ${{ secrets.BEGET_PASSWORD }}
-        port: 22
-        source: "${{ env.ARCHIVE_FILE }}"
-        target: "${{ secrets.BEGET_DEPLOY_PATH }}"
-        rm: true
-
-    - name: Extract and cleanup files on server
+    - name: Deploy files to server via git
       uses: appleboy/ssh-action@v0.1.5
       with:
         host: ${{ secrets.BEGET_HOST }}
@@ -44,20 +19,14 @@ jobs:
         password: ${{ secrets.BEGET_PASSWORD }}
         port: 22
         script: |
+          # Перейти в директорию проекта на сервере
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
-          # Найти недавно загруженный архив и распаковать его
-          ARCHIVE_FILE=$(ls -t temp_deploy_project_*.tar.gz | head -n 1)
           
-          # Извлекаем архив в новую директорию
-          mkdir -p temp_extract
-          tar -xzf "$ARCHIVE_FILE" -C temp_extract
+          # Обновить код из репозитория
+          git pull origin main || git pull origin master
           
-          # Копируем файлы из временной директории в рабочую, заменяя существующие
-          rsync -av --exclude='.git' --exclude='.env' --exclude='venv' --exclude='env' temp_extract/ ./
-          
-          # Удаляем временные файлы
-          rm -rf temp_extract
-          rm -f "$ARCHIVE_FILE"
+          # Убедиться, что все файлы обновлены
+          git status
 
     - name: Run deployment commands on Beget
       uses: appleboy/ssh-action@v0.1.5
