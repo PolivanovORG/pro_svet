@@ -27,7 +27,6 @@ jobs:
         source: "./temp_deploy/*"
         target: "${{ secrets.BEGET_DEPLOY_PATH }}"
         strip_components: 1
-        overwrite: true
         rm: true
 
     - name: Run deployment commands on Beget
