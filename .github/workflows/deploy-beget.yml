@@ -84,13 +84,12 @@ jobs:
 
           # Подключиться к Docker-контейнеру и выполнить команды
           # На Beget Python-приложения работают внутри Docker-контейнера
-          ssh localhost -p222 << 'DOCKER_EOF'
-
+          ssh localhost -p222 "
           # Перейти в директорию проекта внутри Docker-контейнера
           cd ${{ secrets.BEGET_DEPLOY_PATH }}
 
           # Установить или обновить виртуальное окружение
-          if [ ! -d "venv" ]; then
+          if [ ! -d \"venv\" ]; then
             python3 -m venv venv
           fi
           source venv/bin/activate
@@ -109,7 +108,7 @@ jobs:
           python manage.py migrate --settings=pro_core.settings
 
           # Создать символьную ссылку public, указывающую на public_html (если не существует)
-          if [ ! -L "public" ] && [ -d "public_html" ]; then
+          if [ ! -L \"public\" ] && [ -d \"public_html\" ]; then
             ln -s public_html public
           fi
 
@@ -119,18 +118,18 @@ jobs:
 
           # Убедиться, что файлы passenger_wsgi.py и .htaccess существуют и имеют правильные пути
           # Обновить пути в passenger_wsgi.py если они отличаются
-          if [ -f "passenger_wsgi.py" ]; then
+          if [ -f \"passenger_wsgi.py\" ]; then
               # Заменить пути в passenger_wsgi.py на правильные для текущего размещения
-              sed -i "s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g" passenger_wsgi.py
+              sed -i \"s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g\" passenger_wsgi.py
           else
-              echo "ERROR: passenger_wsgi.py not found!"
+              echo \"ERROR: passenger_wsgi.py not found!\"
           fi
           
-          if [ -f ".htaccess" ]; then
+          if [ -f \".htaccess\" ]; then
               # Заменить пути в .htaccess на правильные для текущего размещения
-              sed -i "s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g" .htaccess
+              sed -i \"s|/home/p/polivajh/polivajh.beget.tech/public_html|${{ secrets.BEGET_DEPLOY_PATH }}|g\" .htaccess
           else
-              echo "ERROR: .htaccess not found!"
+              echo \"ERROR: .htaccess not found!\"
           fi
 
           # Вывести информацию о состоянии
@@ -141,5 +140,4 @@ jobs:
           ls -la
           echo 'Virtual environment packages:'
           pip list
-
-          DOCKER_EOF
+          "
